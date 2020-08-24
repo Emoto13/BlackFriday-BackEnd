@@ -24,7 +24,7 @@ SECRET_KEY = 'qnm&!12&vx31f#pmj!gfl0+&pxc-f8ynrmbro+*t64hm(elfjc'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['testserver', '127.0.0.1']
 
 # Application definition
 
@@ -157,11 +157,10 @@ REST_FRAMEWORK = {
         # `allauth` specific authentication methods, such as login by e-mail
         'allauth.account.auth_backends.AuthenticationBackend',
     ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
+    'DEFAULT_PERMISSION_CLASSES': []
 
 }
+CORS_ORIGIN_ALLOW_ALL = True
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
