@@ -35,8 +35,7 @@ class CustomUser(AbstractBaseUser):
 
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
-    address = models.TextField(default='')
-
+    description = models.TextField(default='')
     username = models.CharField(unique=True, max_length=150)
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=150)
@@ -44,6 +43,7 @@ class CustomUser(AbstractBaseUser):
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_logged_in = models.BooleanField(default=True)
     last_login = models.DateTimeField(default=timezone.now)
     date_joined = models.DateField(auto_now_add=True)
 
@@ -57,11 +57,14 @@ class CustomUser(AbstractBaseUser):
     longitude = models.DecimalField(
         max_digits=50, decimal_places=30, blank=True, null=True)
 
-    country = CountryField(blank=True)
-
-    objects = UserManager()
-
     gender = models.CharField(choices=GENDERS, max_length=50)
+    apartment = models.CharField(max_length=10)
+    floor = models.CharField(max_length=10)
+    street_and_number = models.CharField(max_length=150)
+    city = models.CharField(max_length=150)
+    country = CountryField(blank=True)
+    zip = models.IntegerField(null=True)
+    objects = UserManager()
 
     def __str__(self):
         return f"{self.id} - {self.username} {self.first_name} {self.last_name}"

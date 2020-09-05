@@ -9,7 +9,9 @@ class CustomUserSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id', 'username', 'first_name', 'last_name', 'email',
-                  'is_staff', 'is_superuser', 'is_active',
+                  'description', 'city', 'street_and_number', 'floor', 'apartment',
+                  'zip',
+                  'is_staff', 'is_superuser', 'is_active', 'is_logged_in',
                   'last_login', 'date_joined', 'birthday', 'profile_image',
                   'account_title', 'latitude', 'longitude',
                   'gender', 'country']

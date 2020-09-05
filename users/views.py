@@ -1,16 +1,13 @@
-from functools import partial
-
-from django.shortcuts import render
-
 # Create your views here.
+from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 
 from users.models import CustomUser
+from users.permissions import AllowOptionsAuthentication
 from users.serializers import CustomUserSerializer
-
-from django.contrib.auth import logout
 
 
 class CustomUsersViewSet(viewsets.ModelViewSet):
@@ -19,13 +16,21 @@ class CustomUsersViewSet(viewsets.ModelViewSet):
     permission_classes = []
 
 
-@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@api_view(['GET', ])
+def authenticated_user_information(request):
+    serializer = CustomUserSerializer(request.user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['POST', ])
 def create_user(request):
     CustomUser.objects.create_user(**request.data)
     return Response('User creation successful', status=status.HTTP_201_CREATED)
 
 
-@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@api_view(['GET', ])
 def get_user(request, username):
     user = CustomUser.objects.get(username=username)
     if user is None:
@@ -33,18 +38,28 @@ def get_user(request, username):
     return Response(CustomUserSerializer(user).data, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(['POST', ])
 def create_user(request):
     CustomUser.objects.create_user(**request.data)
     return Response('User creation successful', status=status.HTTP_201_CREATED)
 
 
-@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+@api_view(['DELETE', ])
 def delete_user(request):
-    pass
+    if request.method == "DELETE":
+        request.user.delete()
+        return Response(data='Deletion successful')
+    return Response(data='Deletion failed')
 
 
-@api_view(['GET'])
-def user_logout(request):
-    logout(request)
-    return Response('Logged out successfully', status=status.HTTP_200_OK)
+@api_view(['PATCH', ])
+def update_user(request):
+    data = request.data
+    if 'is_logged_in' in request.data.keys():
+        data['last_login'] = timezone.now()
+    serializer = CustomUserSerializer(instance=request.user, data=data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response('Successfully updated', status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
