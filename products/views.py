@@ -4,8 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from products.models import Product, ProductImage
-from products.serializers import ProductSerializer, ProductImageSerializer, ComplexProductSerializer, \
-    TestProductImageSerializer
+from products.serializers import ProductSerializer, TestProductImageSerializer, ComplexProductSerializer
+from django.db.models import F
 
 
 class ProductsViewSet(viewsets.ModelViewSet):
@@ -31,10 +31,50 @@ def get_product(request, name):
 @api_view(['POST'])
 def create_product(request):
     product_data = request.data['product_data']
-    images = request.data['images']
+    product_images = request.data['product_images']
+
+    if 'current_price' not in product_data.keys():
+        product_data['current_price'] = product_data['original_price']
 
     product = Product.objects.create(**product_data)
-
-    for image in images:
+    for image in product_images:
         ProductImage.objects.create(image=image, product=product)
     return Response('Product created successfully', status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', ])
+def get_discounted_products(request, category=''):
+    if category != '':
+        product_objects = Product.objects.filter(current_price__lt=F('original_price')).filter(category=category)
+        products = ComplexProductSerializer(instance=product_objects, many=True, context={'request': request})
+        return Response(products.data, status=status.HTTP_200_OK)
+
+    product_objects = Product.objects.filter(current_price__lt=F('original_price'))
+    products = ComplexProductSerializer(instance=product_objects, many=True, context={'request': request})
+    return Response(products.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', ])
+def get_discounted_products_by_category(request, category):
+    product_objects = Product.objects.filter(current_price__lt=F('original_price')).filter(category=category)
+    products = ComplexProductSerializer(instance=product_objects, many=True, context={'request': request})
+    return Response(products.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', ])
+def get_products_by_category(request, category=''):
+    if category != '':
+        product_objects = Product.objects.filter(category=category)
+        products = ComplexProductSerializer(instance=product_objects, many=True, context={'request': request})
+        return Response(data=products.data, status=status.HTTP_200_OK)
+
+    product_objects = Product.objects.all()
+    products = ComplexProductSerializer(instance=product_objects, many=True, context={'request': request})
+    return Response(data=products.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', ])
+def get_products(request):
+    product_objects = Product.objects.all()
+    products = ComplexProductSerializer(instance=product_objects, many=True, context={'request': request})
+    return Response(products.data, status=status.HTTP_200_OK)

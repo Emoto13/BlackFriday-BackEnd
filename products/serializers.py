@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from products.models import Product, ProductImage
 
 
@@ -12,9 +11,9 @@ class TestProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Product
-        fields = ['url', 'id', 'name', 'type',
+        fields = ['url', 'id', 'name', 'category',
                   'original_price', 'current_price', 'discount_percentage',
-                  'description', 'upload_date', 'country', 'city', 'in_store', ]
+                  'description', 'upload_date', 'country', 'city', 'in_store', 'url_name']
 
 
 class ProductImageSerializer(serializers.HyperlinkedModelSerializer):
@@ -28,14 +27,15 @@ class ProductImageRelatedField(serializers.RelatedField):
         return data
 
     def to_representation(self, obj):
-        return ProductImageSerializer(obj).data
+        return ProductImageSerializer(instance=obj).data
 
 
-class ComplexProductSerializer(serializers.ModelSerializer):
+class ComplexProductSerializer(serializers.HyperlinkedModelSerializer):
     product_images = ProductImageRelatedField(many=True, read_only=True)
 
     class Meta:
         model = Product
-        fields = ['url', 'id', 'name', 'type',
+        fields = ['url', 'id', 'name', 'category',
                   'original_price', 'current_price', 'discount_percentage',
-                  'description', 'upload_date', 'country', 'city', 'in_store', 'product_images']
+                  'description', 'upload_date', 'country', 'city', 'in_store', 'product_images', 'url_name']
+
