@@ -15,16 +15,20 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include, register_converter
+from django.urls import path, include
 from rest_framework import routers
+from rest_framework_simplejwt import views as jwt_views
 
 from BlackFriday import settings
 from orders.views import OrdersViewSet, create_order, get_order_by_id, get_orders_by_status, \
     get_orders_by_delivery_date, get_orders_by_order_date
-from products.views import ProductImagesViewSet, ProductsViewSet, get_product, create_product
-from users.views import CustomUsersViewSet, user_logout, get_user, create_user, delete_user
+from products.models import Product
+from products.views import ProductImagesViewSet, ProductsViewSet, get_product, create_product, get_discounted_products, \
+    get_products_by_category, get_discounted_products_by_category, get_products
+from users.views import CustomUsersViewSet, get_user, create_user, update_user, delete_user, \
+    authenticated_user_information
 
-router = routers.DefaultRouter()
+router = routers.DefaultRouter(trailing_slash=False)
 router.register('users', CustomUsersViewSet)
 router.register('orders', OrdersViewSet)
 router.register('products', ProductsViewSet)
@@ -34,21 +38,27 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
+    path('api/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 
-    path('users/<str:username>/', get_user),
-    path('users-create/', create_user),
-    #  path('users/update/<str:username>/', ),
-    path('users-delete/<str:username>/', delete_user),
-    path('logout/', user_logout),
+    path('user/', authenticated_user_information),
+    path('user/create/', create_user),
+    path('user/update/', update_user),
+    path('user/delete/', delete_user),
+    path('get-user/<str:username>/', get_user),
 
-    path('products/<str:name>', get_product),
-    path('products-create/', create_product),
+    path('products/', get_products),
+    path('products/category/<str:category>/', get_products_by_category, name='product-category-list'),
+    path('products/create/', create_product),
+    path('products/discounted/', get_discounted_products),
+    path('products/discounted/category/<str:category>/', get_discounted_products),
+    path('products-get-by-name/<str:name>/', get_product),
 
     path('get-order/<int:order_id>/', get_order_by_id),
     path('get-orders/status/<str:order_status>/', get_orders_by_status),
     path('get-orders/delivery-date/<str:delivery_date>/', get_orders_by_delivery_date),
     path('get-orders/order-date/<str:order_date>/', get_orders_by_order_date),
-    path('create-order/', create_order),
+    path('order/create/', create_order),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
