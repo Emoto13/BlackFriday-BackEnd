@@ -1,13 +1,21 @@
 # Create your views here.
+from decimal import Decimal
+
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from django.db.models.expressions import F
+from django.views.decorators.cache import cache_page
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from orders.models import Order
+from BlackFriday import settings
+from orders.models import Order, OrderProduct
 from orders.serializers import OrderSerializer
-from orders.validators import date_handler
 from products.models import Product
+
+
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
 class OrdersViewSet(viewsets.ModelViewSet):
@@ -16,51 +24,52 @@ class OrdersViewSet(viewsets.ModelViewSet):
 
 
 # get order by date, status, id
-@api_view(['GET'])
+@api_view(['GET', ])
 def get_order_by_id(request, order_id):
-    try:
-        order = Order.objects.get(id=order_id)
-        return Response(OrderSerializer(order, context={'request': request}).data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+    order = Order.objects.get(id=order_id)
+    order_serializer = OrderSerializer(instance=order, context={'request': request})
+    return Response(order_serializer.data, status=status.HTTP_200_OK)
 
 
-@api_view(['GET'])
-def get_orders_by_status(request, order_status):
-    orders = Order.objects.filter(status=order_status)
-    return Response(OrderSerializer(orders, many=True, context={'request': request}).data, status=status.HTTP_200_OK)
+# DEPRECATED
+# @permission_classes([IsAuthenticated])
+# @api_view(['POST'])
+# def create_order(request):
+#    print(request.user)
+#    user = request.user
+#    product = Product.objects.get(name=request.data['product_name'])
+#    order_data = {**{'ordered_by': user, 'ordered_product': product}, **request.data['order_data']}
+#    Order.objects.create(**order_data)
+#    return Response('Order has been successfully made', status=status.HTTP_201_CREATED)
 
-
-@api_view(['GET'])
-@date_handler
-def get_orders_by_delivery_date(request, year_month_date):
-    try:
-        orders = Order.objects.filter(delivery_date__year=year_month_date[0],
-                                      delivery_date__month=year_month_date[1],
-                                      delivery_date__day=year_month_date[2])
-        return Response(OrderSerializer(orders, many=True, context={"request": request}).data, status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response('No orders with that delivery date', status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(['GET'])
-@date_handler
-def get_orders_by_order_date(request, year_month_date):
-    try:
-        orders = Order.objects.filter(order_date__year=year_month_date[0],
-                                      order_date__month=year_month_date[1],
-                                      order_date__day=year_month_date[2])
-        return Response(OrderSerializer(orders, many=True, context={"request": request}).data,
-                        status=status.HTTP_200_OK)
-    except Exception as e:
-        return Response('No orders with that order date', status=status.HTTP_404_NOT_FOUND)
-
-
+@cache_page(CACHE_TTL)
 @permission_classes([IsAuthenticated])
-@api_view(['POST'])
+@api_view(['POST', ])
 def create_order(request):
-    user = request.user
-    product = Product.objects.get(name=request.data['product_name'])
-    order_data = {**{'ordered_by': user, 'ordered_product': product}, **request.data['order_data']}
-    Order.objects.create(**order_data)
+    product_ids_and_quantity = request.data["product_ids_and_quantity"]
+    order_data = {**request.data['order_data']}
+    products = []
+    total_price = Decimal(4.99)
+
+    if 'delivery_price' in order_data:
+        total_price = Decimal(order_data['delivery_price'])
+
+    for product_id in product_ids_and_quantity.keys():
+        quantity = product_ids_and_quantity[product_id]
+
+        product = Product.objects.get(id=product_id)
+        product.in_store = F('in_store') - quantity
+        product.save()
+
+        total_price += product.current_price * quantity
+
+        for i in range(0, product_ids_and_quantity[product_id]):
+            products.append(product)
+
+    order_data = {'ordered_by': request.user, 'total_price': total_price, **request.data['order_data']}
+    order = Order.objects.create(**order_data)
+
+    for product in products:
+        OrderProduct.objects.create(product=product, order=order,
+                                    product_quantity=product_ids_and_quantity[str(product.id)])
     return Response('Order has been successfully made', status=status.HTTP_201_CREATED)
