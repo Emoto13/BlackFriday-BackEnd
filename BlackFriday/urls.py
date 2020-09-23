@@ -20,13 +20,12 @@ from rest_framework import routers
 from rest_framework_simplejwt import views as jwt_views
 
 from BlackFriday import settings
-from orders.views import OrdersViewSet, create_order, get_order_by_id, get_orders_by_status, \
-    get_orders_by_delivery_date, get_orders_by_order_date
-from products.models import Product
+from orders.search_view import search_order
+from orders.views import OrdersViewSet, create_order, get_order_by_id
 from products.views import ProductImagesViewSet, ProductsViewSet, get_product, create_product, get_discounted_products, \
-    get_products_by_category, get_discounted_products_by_category, get_products
+    get_products_by_category, get_products, cart_ids
 from users.views import CustomUsersViewSet, get_user, create_user, update_user, delete_user, \
-    authenticated_user_information
+    authenticated_user_information, search_users, restore_password
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('users', CustomUsersViewSet)
@@ -45,20 +44,22 @@ urlpatterns = [
     path('user/create/', create_user),
     path('user/update/', update_user),
     path('user/delete/', delete_user),
-    path('get-user/<str:username>/', get_user),
+    path('user/<str:username>/', get_user),
+    path('user/search/<str:query>/', search_users),
+    path('restore-password/', restore_password),
 
     path('products/', get_products),
-    path('products/category/<str:category>/', get_products_by_category, name='product-category-list'),
+    path('products/category/<str:category>/', get_products_by_category),
     path('products/create/', create_product),
     path('products/discounted/', get_discounted_products),
     path('products/discounted/category/<str:category>/', get_discounted_products),
-    path('products-get-by-name/<str:name>/', get_product),
+    path('products/<str:url_name>/', get_product),
+    path('cart/ids/<str:ids>/', cart_ids),
 
-    path('get-order/<int:order_id>/', get_order_by_id),
-    path('get-orders/status/<str:order_status>/', get_orders_by_status),
-    path('get-orders/delivery-date/<str:delivery_date>/', get_orders_by_delivery_date),
-    path('get-orders/order-date/<str:order_date>/', get_orders_by_order_date),
+    path('order/<int:order_id>/', get_order_by_id),
     path('order/create/', create_order),
+    # path('order/create/test/', create_order_new),
+    path('order/search/<str:str_filters>', search_order)
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
