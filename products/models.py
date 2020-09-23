@@ -5,6 +5,9 @@ from django.db import models
 # Create your models here.
 from django.utils import timezone
 from django_countries.fields import CountryField
+from drf_extra_fields.fields import Base64ImageField
+from imagekit.forms import ProcessedImageField
+from pilkit.processors import ResizeToFill
 
 CATEGORIES = [
     ('A', 'Automotive'),
@@ -19,7 +22,7 @@ CATEGORIES = [
     ('HG', 'House and Garden'),
     ('RE', 'Real Estate'),
     ('SBH', 'Sports, Books, Hobby'),
-    ('MTE', 'Machines, tools, equipment'),
+    ('MTE', 'Machines, Tools, Equipment'),
 ]
 
 
@@ -50,3 +53,6 @@ class ProductImage(models.Model):
     image = models.ImageField(blank=True)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="product_images")
     uploaded_on = models.DateTimeField(auto_now_add=True)
+    #image1 = ProcessedImageField(processors=[ResizeToFill(100, 50)],
+    #                             spec_id='BlackFriday:product:image')
+    #                             #default='/BlackFriday/static/media/defaults/')
