@@ -46,7 +46,7 @@ urlpatterns = [
     path('user/delete/', delete_user),
     path('user/<str:username>/', get_user),
     path('user/search/<str:query>/', search_users),
-    path('restore-password/', restore_password),
+    path('restore-password/<str:sender_email>/<str:password>/<str:receiver_email>/', restore_password),
 
     path('products/', get_products),
     path('products/category/<str:category>/', get_products_by_category),

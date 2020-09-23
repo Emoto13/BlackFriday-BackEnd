@@ -81,14 +81,10 @@ def search_users(request, query):
 
 
 @api_view(['GET', ])
-def restore_password(request):
+def restore_password(request, sender_email, password, receiver_email):
     import smtplib, ssl
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
-
-    sender_email = "emcho.spassov@gmail.com"
-    receiver_email = "emcho_spassov@abv.bg"
-    password = 'ratchet13'
 
     message = MIMEMultipart("alternative")
     message["Subject"] = "multipart test"
@@ -125,7 +121,7 @@ def restore_password(request):
     # Create secure connection with server and send email
     context = ssl.create_default_context()
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
-        server.login(sender_email, 'ratchet13')
+        server.login(sender_email, password)
         server.sendmail(
             sender_email, receiver_email, message.as_string()
         )
