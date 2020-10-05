@@ -19,13 +19,15 @@ from django.urls import path, include
 from rest_framework import routers
 from rest_framework_simplejwt import views as jwt_views
 
+
+from orders.views import OrdersViewSet
+from products.views import ProductImagesViewSet, ProductsViewSet
+from users.views import CustomUsersViewSet
+
 from BlackFriday import settings
-from orders.search_view import search_order
-from orders.views import OrdersViewSet, create_order, get_order_by_id
-from products.views import ProductImagesViewSet, ProductsViewSet, get_product, create_product, get_discounted_products, \
-    get_products_by_category, get_products, cart_ids
-from users.views import CustomUsersViewSet, get_user, create_user, update_user, delete_user, \
-    authenticated_user_information, search_users, restore_password
+from orders.urls import order_urls
+from products.urls import products_urls, cart_urls
+from users.urls import user_urls
 
 router = routers.DefaultRouter(trailing_slash=False)
 router.register('users', CustomUsersViewSet)
@@ -40,26 +42,11 @@ urlpatterns = [
     path('api/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
 
-    path('user/', authenticated_user_information),
-    path('user/create/', create_user),
-    path('user/update/', update_user),
-    path('user/delete/', delete_user),
-    path('user/<str:username>/', get_user),
-    path('user/search/<str:query>/', search_users),
-    path('restore-password/<str:sender_email>/<str:password>/<str:receiver_email>/', restore_password),
+    path('user/', include(user_urls)),
+    path('products/', include(products_urls)),
+    path('order/', include(order_urls)),
+    path('cart/', include(cart_urls)),
 
-    path('products/', get_products),
-    path('products/category/<str:category>/', get_products_by_category),
-    path('products/create/', create_product),
-    path('products/discounted/', get_discounted_products),
-    path('products/discounted/category/<str:category>/', get_discounted_products),
-    path('products/<str:url_name>/', get_product),
-    path('cart/ids/<str:ids>/', cart_ids),
-
-    path('order/<int:order_id>/', get_order_by_id),
-    path('order/create/', create_order),
-    # path('order/create/test/', create_order_new),
-    path('order/search/<str:str_filters>', search_order)
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
