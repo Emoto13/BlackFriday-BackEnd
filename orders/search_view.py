@@ -33,7 +33,6 @@ def search_order(request, str_filters):
     }
     orders = []
     for key in filters.keys():
-        print(orders)
         filter_argument = filters[key]
         function = filter_orders[key]
         if not orders:
