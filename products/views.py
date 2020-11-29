@@ -102,3 +102,17 @@ def cart_ids(request, ids):
     product_objects = [Product.objects.get(id=int_id) for int_id in int_ids]
     products = MiniProductSerializer(instance=product_objects, many=True, context={"request": request})
     return Response(products.data, status=status.HTTP_200_OK)
+
+
+@cache_page(CACHE_TTL)
+@api_view(['GET', ])
+def search_products(request, query):
+    products = Product.objects.filter(name__icontains=query)
+    return Response(MiniProductSerializer(instance=products, many=True, context={"request": request}).data,
+                    status=status.HTTP_200_OK)
+@cache_page(CACHE_TTL)
+@api_view(['GET', ])
+def recent_products(request, count):
+    products = Product.objects.all()[:count]
+    return Response(ComplexProductSerializer(instance=products, many=True, context={"request": request}).data,
+                    status=status.HTTP_200_OK)
